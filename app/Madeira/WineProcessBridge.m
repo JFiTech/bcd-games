@@ -1731,6 +1731,22 @@ static void *wine_process_thread(void *arg) {
             NSString *caPath = [[NSBundle mainBundle] pathForResource:@"cacert" ofType:@"pem"];
             if (caPath) {
                 setenv("MADEIRA_CA_BUNDLE", caPath.UTF8String, 1);
+                {
+                    setenv("MADEIRA_HIDPAD_XINPUT", "1", 1);
+                    setenv("MADEIRA_DINPUT_PAD", "1", 1);
+                    setenv("MADEIRA_PAD_EARLY_SLOT", "1", 1);
+                    setenv("MADEIRA_XINPUT", "1", 1);
+
+                    const char *existingOverrides = getenv("WINEDLLOVERRIDES");
+                    NSString *inputOverrides = @"xinput1_1,xinput1_2,xinput1_3,xinput1_4,xinput9_1_0=b;dinput8=b;dinput=b";
+                    NSString *existingStr = existingOverrides ? [NSString stringWithUTF8String:existingOverrides] : @"";
+                    if (existingStr.length == 0) {
+                        setenv("WINEDLLOVERRIDES", inputOverrides.UTF8String, 1);
+                    } else if (![existingStr containsString:@"xinput1_3=b"]) {
+                        NSString *combined = [NSString stringWithFormat:@"%@;%@", existingStr, inputOverrides];
+                        setenv("WINEDLLOVERRIDES", combined.UTF8String, 1);
+                    }
+                }
                 LOG("CA bundle: %{public}s", caPath.UTF8String);
             } else {
                 LOG("WARNING: cacert.pem missing from bundle — HTTPS cert verification will fail");
